@@ -458,6 +458,8 @@ MAV_TYPE Copter::get_frame_mav_type()
             return MAV_TYPE_HELICOPTER;
         case AP_Motors::MOTOR_FRAME_TRI:
             return MAV_TYPE_TRICOPTER;
+        case AP_Motors::MOTOR_FRAME_BI:
+			return MAV_TYPE_VTOL_DUOROTOR;
         case AP_Motors::MOTOR_FRAME_SINGLE:
         case AP_Motors::MOTOR_FRAME_COAX:
         case AP_Motors::MOTOR_FRAME_TAILSITTER:
@@ -491,6 +493,8 @@ const char* Copter::get_frame_string()
             return "HELI_QUAD";
         case AP_Motors::MOTOR_FRAME_TRI:
             return "TRI";
+		case AP_Motors::MOTOR_FRAME_BI:
+			return "BI";
         case AP_Motors::MOTOR_FRAME_SINGLE:
             return "SINGLE";
         case AP_Motors::MOTOR_FRAME_COAX:
@@ -527,6 +531,11 @@ void Copter::allocate_motors(void)
             motors_var_info = AP_MotorsTri::var_info;
             AP_Param::set_frame_type_flags(AP_PARAM_FRAME_TRICOPTER);
             break;
+        case AP_Motors::MOTOR_FRAME_BI:
+			motors = new AP_MotorsBi(copter.scheduler.get_loop_rate_hz());
+			motors_var_info = AP_MotorsBi::var_info;
+			AP_Param::set_frame_type_flags(AP_PARAM_FRAME_BICOPTER);
+			break;
         case AP_Motors::MOTOR_FRAME_SINGLE:
             motors = new AP_MotorsSingle(copter.scheduler.get_loop_rate_hz());
             motors_var_info = AP_MotorsSingle::var_info;

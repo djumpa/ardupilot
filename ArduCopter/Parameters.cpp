@@ -914,7 +914,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Values: 0:Undefined, 1:Quad, 2:Hexa, 3:Octa, 4:OctaQuad, 5:Y6, 6:Heli, 7:Tri, 8:SingleCopter, 9:CoaxCopter, 11:Heli_Dual, 12:DodecaHexa, 13:HeliQuad
     // @User: Standard
     // @RebootRequired: True
-    AP_GROUPINFO("FRAME_CLASS", 15, ParametersG2, frame_class, 0),
+    AP_GROUPINFO("FRAME_CLASS", 15, ParametersG2, frame_class, 21),
 
     // @Group: SERVO
     // @Path: ../libraries/SRV_Channel/SRV_Channels.cpp

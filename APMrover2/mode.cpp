@@ -42,7 +42,14 @@ bool Mode::enter()
         }
     }
 
-    return _enter();
+    bool ret = _enter();
+
+    // initialisation common to all modes
+    if (ret) {
+        set_reversed(false);
+    }
+
+    return ret;
 }
 
 // decode pilot steering and throttle inputs and return in steer_out and throttle_out arguments
@@ -224,6 +231,12 @@ bool Mode::set_desired_speed(float speed)
         return true;
     }
     return false;
+}
+
+// execute the mission in reverse (i.e. backing up)
+void Mode::set_reversed(bool value)
+{
+    _reversed = value;
 }
 
 void Mode::calc_throttle(float target_speed, bool nudge_allowed, bool avoidance_enabled)

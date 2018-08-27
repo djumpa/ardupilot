@@ -453,6 +453,24 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Description: When enabled this will automatically check the orientation of compasses on successful completion of compass calibration. If set to 2 then external compasses will have their orientation automatically corrected.
     // @Values: 0:Disabled,1:CheckOnly,2:CheckAndFix
     AP_GROUPINFO("AUTO_ROT", 35, Compass, _rotate_auto, HAL_COMPASS_AUTO_ROT_DEFAULT),
+
+    // @Param: EXP_DID
+    // @DisplayName: Compass device id expected
+    // @Description: The expected value of COMPASS_DEV_ID, used by arming checks. Setting this to -1 means "don't care."
+    // @User: Advanced
+    AP_GROUPINFO("EXP_DID",  36, Compass, _state[0].expected_dev_id, -1),
+
+    // @Param: EXP_DID2
+    // @DisplayName: Compass2 device id expected
+    // @Description: The expected value of COMPASS_DEV_ID2, used by arming checks. Setting this to -1 means "don't care."
+    // @User: Advanced
+    AP_GROUPINFO("EXP_DID2", 37, Compass, _state[1].expected_dev_id, -1),
+
+    // @Param: EXP_DID3
+    // @DisplayName: Compass3 device id expected
+    // @Description: The expected value of COMPASS_DEV_ID3, used by arming checks. Setting this to -1 means "don't care."
+    // @User: Advanced
+    AP_GROUPINFO("EXP_DID3", 38, Compass, _state[2].expected_dev_id, -1),
     
     AP_GROUPEND
 };
@@ -1017,15 +1035,6 @@ void Compass::_detect_backends(void)
     }
 }
 
-void
-Compass::accumulate(void)
-{
-    for (uint8_t i=0; i< _backend_count; i++) {
-        // call accumulate on each of the backend
-        _backends[i]->accumulate();
-    }
-}
-
 bool
 Compass::read(void)
 {
@@ -1093,7 +1102,7 @@ void
 Compass::save_offsets(uint8_t i)
 {
     _state[i].offset.save();  // save offsets
-    _state[i].dev_id.save();  // save device id corresponding to these offsets
+    _state[i].dev_id.set_and_save(_state[i].detected_dev_id);
 }
 
 void
@@ -1216,17 +1225,27 @@ bool Compass::configured(uint8_t i)
         return false;
     }
 
-    // backup detected dev_id
-    int32_t dev_id_orig = _state[i].dev_id;
+    // exit immediately if dev_id hasn't been detected
+    if (_state[i].detected_dev_id == 0) {
+        return false;
+    }
+
+    // back up cached value of dev_id
+    int32_t dev_id_cache_value = _state[i].dev_id;
 
     // load dev_id from eeprom
     _state[i].dev_id.load();
 
-    // if different then the device has not been configured
-    if (_state[i].dev_id != dev_id_orig) {
-        // restore device id
-        _state[i].dev_id = dev_id_orig;
+    // if dev_id loaded from eeprom is different from detected dev id or dev_id loaded from eeprom is different from cached dev_id, compass is unconfigured
+    if (_state[i].dev_id != _state[i].detected_dev_id || _state[i].dev_id != dev_id_cache_value) {
+        // restore cached value
+        _state[i].dev_id = dev_id_cache_value;
         // return failure
+        return false;
+    }
+
+    // if expected_dev_id is configured and the detected dev_id is different, return false
+    if (_state[i].expected_dev_id != -1 && _state[i].expected_dev_id != _state[i].dev_id) {
         return false;
     }
 

@@ -97,9 +97,7 @@ public:
 
     // set and save trim if changed
     void       set_and_save_radio_trim(int16_t val) { radio_trim.set_and_save_ifchanged(val);}
-    
-    bool min_max_configured() const;
-    
+
     AP_Int16    option; // e.g. activate EPM gripper / enable fence
 
     // auxillary switch support:
@@ -181,8 +179,10 @@ protected:
     virtual void init_aux_function(aux_func_t ch_option, aux_switch_pos_t);
     virtual void do_aux_function(aux_func_t ch_option, aux_switch_pos_t);
 
-    void do_aux_function_relay(uint8_t relay, bool val);
     void do_aux_function_camera_trigger(const aux_switch_pos_t ch_flag);
+    void do_aux_function_gripper(const aux_switch_pos_t ch_flag);
+    void do_aux_function_relay(uint8_t relay, bool val);
+    void do_aux_function_sprayer(const aux_switch_pos_t ch_flag);
 
     typedef int8_t modeswitch_pos_t;
     virtual void mode_switch_changed(modeswitch_pos_t new_pos) {
@@ -214,9 +214,6 @@ private:
     // overrides
     uint16_t override_value;
     uint32_t last_override_time;
-
-    // bits set when channel has been identified as configured
-    static uint32_t configured_mask;
 
     int16_t pwm_to_angle();
     int16_t pwm_to_angle_dz(uint16_t dead_zone);

@@ -105,10 +105,12 @@ bool AP_Baro_BMP280::_init()
         mask = 0x7F;
     }
 
+    _dev->setup_checked_registers(2, 20);
+    
     _dev->write_register((BMP280_REG_CTRL_MEAS & mask), (BMP280_OVERSAMPLING_T << 5) |
-                         (BMP280_OVERSAMPLING_P << 2) | BMP280_MODE);
+                         (BMP280_OVERSAMPLING_P << 2) | BMP280_MODE, true);
 
-    _dev->write_register((BMP280_REG_CONFIG & mask), BMP280_FILTER_COEFFICIENT << 2);
+    _dev->write_register((BMP280_REG_CONFIG & mask), BMP280_FILTER_COEFFICIENT << 2, true);
 
     _instance = _frontend.register_sensor();
 
@@ -131,20 +133,22 @@ void AP_Baro_BMP280::_timer(void)
 
     _update_temperature((buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4));
     _update_pressure((buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4));
+
+    _dev->check_next_register();
 }
 
 // transfer data to the frontend
 void AP_Baro_BMP280::update(void)
 {
-    if (_sem->take_nonblocking()) {
+    if (_sem.take_nonblocking()) {
         if (!_has_sample) {
-            _sem->give();
+            _sem.give();
             return;
         }
 
         _copy_to_frontend(_instance, _pressure, _temperature);
         _has_sample = false;
-        _sem->give();
+        _sem.give();
     }
 }
 
@@ -161,10 +165,9 @@ void AP_Baro_BMP280::_update_temperature(int32_t temp_raw)
 
     const float temp = ((float)t) / 100.0f;
 
-    if (_sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        _temperature = temp;
-        _sem->give();
-    }
+    WITH_SEMAPHORE(_sem);
+    
+    _temperature = temp;
 }
 
 // calculate pressure
@@ -195,9 +198,9 @@ void AP_Baro_BMP280::_update_pressure(int32_t press_raw)
     if (!pressure_ok(press)) {
         return;
     }
-    if (_sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        _pressure = press;
-        _has_sample = true;
-        _sem->give();
-    }
+    
+    WITH_SEMAPHORE(_sem);
+    
+    _pressure = press;
+    _has_sample = true;
 }

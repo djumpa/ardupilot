@@ -78,17 +78,8 @@ class AutoTestSub(AutoTest):
 
         self.progress("Started simulator")
 
-        # get a mavlink connection going
-        connection_string = '127.0.0.1:19550'
-        try:
-            self.mav = mavutil.mavlink_connection(connection_string,
-                                                  robust_parsing=True)
-        except Exception as msg:
-            self.progress("Failed to start mavlink connection on %s: %s" %
-                          (connection_string, msg,))
-            raise
-        self.mav.message_hooks.append(self.message_hook)
-        self.mav.idle_hooks.append(self.idle_hook)
+        self.get_mavlink_connection_going()
+
         self.hasInit = True
 
         self.apply_defaultfile_parameters()
@@ -141,6 +132,7 @@ class AutoTestSub(AutoTest):
 
     def autotest(self):
         """Autotest ArduSub in SITL."""
+        self.check_test_syntax(test_file=os.path.realpath(__file__))
         if not self.hasInit:
             self.init()
 
@@ -149,13 +141,15 @@ class AutoTestSub(AutoTest):
             self.progress("Waiting for a heartbeat with mavlink protocol %s"
                           % self.mav.WIRE_PROTOCOL_VERSION)
             self.mav.wait_heartbeat()
-            self.mavproxy.send('param set FS_GCS_ENABLE 0\n')
+            self.set_parameter("FS_GCS_ENABLE", 0)
             self.progress("Waiting for GPS fix")
             self.mav.wait_gps_fix()
 
             # wait for EKF and GPS checks to pass
             self.progress("Waiting for ready-to-arm")
             self.wait_ready_to_arm()
+            self.run_test("Arm features", self.test_arm_feature)
+            self.arm_vehicle()
 
             self.homeloc = self.mav.location()
             self.progress("Home location: %s" % self.homeloc)
@@ -173,7 +167,7 @@ class AutoTestSub(AutoTest):
                           lambda: self.log_download(
                               self.buildlogs_path("ArduSub-log.bin")))
 
-        except pexpect.TIMEOUT as e:
+        except pexpect.TIMEOUT:
             self.progress("Failed with timeout")
             self.fail_list.append("Failed with timeout")
 

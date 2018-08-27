@@ -552,7 +552,7 @@ private:
 
     // Precision Landing
 #if PRECISION_LANDING == ENABLED
-    AC_PrecLand precland{ahrs};
+    AC_PrecLand precland;
 #endif
 
     // Pilot Input Management Library
@@ -756,7 +756,7 @@ private:
     void send_rpm(mavlink_channel_t chan);
     void send_pid_tuning(mavlink_channel_t chan);
     void gcs_data_stream_send(void);
-    void gcs_check_input(void);
+    void gcs_update(void);
 
     // heli.cpp
     void heli_init();
@@ -862,7 +862,7 @@ private:
     bool rangefinder_alt_ok();
     void rpm_update();
     void init_compass();
-    void compass_accumulate(void);
+    void init_compass_location();
     void init_optflow();
     void update_optical_flow(void);
     void compass_cal_update(void);
@@ -918,6 +918,10 @@ private:
     void userhook_auxSwitch1(uint8_t ch_flag);
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
+
+#if OSD_ENABLED == ENABLED
+    void publish_osd_info();
+#endif
 
 #include "mode.h"
 

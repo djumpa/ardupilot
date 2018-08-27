@@ -53,7 +53,6 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(gcs_data_stream_send,   50,    500),
     SCHED_TASK(update_events,          50,    150),
     SCHED_TASK_CLASS(AP_BattMonitor, &plane.battery, read, 10, 300),
-    SCHED_TASK(compass_accumulate,     50,    200),
     SCHED_TASK_CLASS(AP_Baro, &plane.barometer, accumulate, 50, 150),
     SCHED_TASK(update_notify,          50,    300),
     SCHED_TASK(read_rangefinder,       50,    100),
@@ -97,6 +96,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #endif
 #if GRIPPER_ENABLED == ENABLED
     SCHED_TASK_CLASS(AP_Gripper, &plane.g2.gripper, update, 10, 75),
+#endif
+#if OSD_ENABLED == ENABLED
+    SCHED_TASK(publish_osd_info, 1, 10),
 #endif
 };
 
@@ -193,16 +195,6 @@ void Plane::update_compass(void)
 }
 
 /*
-  if the compass is enabled then try to accumulate a reading
- */
-void Plane::compass_accumulate(void)
-{
-    if (g.compass_enabled) {
-        compass.accumulate();
-    }    
-}
-
-/*
   do 10Hz logging
  */
 void Plane::update_logging1(void)
@@ -246,15 +238,6 @@ void Plane::afs_fs_check(void)
     afs.check(failsafe.last_heartbeat_ms, geofence_breached(), failsafe.AFS_last_valid_rc_ms);
 }
 
-
-/*
-  update aux servo mappings
- */
-void Plane::update_aux(void)
-{
-    SRV_Channels::enable_aux_servos();
-}
-
 void Plane::one_second_loop()
 {
     // send a heartbeat
@@ -279,7 +262,7 @@ void Plane::one_second_loop()
     // sync MAVLink system ID
     mavlink_system.sysid = g.sysid_this_mav;
 
-    update_aux();
+    SRV_Channels::enable_aux_servos();
 
     // update notify flags
     AP_Notify::flags.pre_arm_check = arming.pre_arm_checks(false);
@@ -962,5 +945,17 @@ float Plane::tecs_hgt_afe(void)
     }
     return hgt_afe;
 }
+
+#if OSD_ENABLED == ENABLED
+void Plane::publish_osd_info()
+{
+    AP_OSD::NavInfo nav_info;
+    nav_info.wp_distance = auto_state.wp_distance;
+    nav_info.wp_bearing = nav_controller->target_bearing_cd();
+    nav_info.wp_xtrack_error = nav_controller->crosstrack_error();
+    nav_info.wp_number = mission.get_current_nav_index();
+    osd.set_nav_info(nav_info);
+}
+#endif
 
 AP_HAL_MAIN_CALLBACKS(&plane);

@@ -46,7 +46,7 @@ public:
 
     // get_motor_mask - returns a bitmask of which outputs are being used for motors (1 means being used)
     //  this can be used to ensure other pwm outputs (i.e. for servos) do not conflict
-    uint16_t            get_motor_mask();
+    uint16_t            get_motor_mask() override;
 
 protected:
     // output - sends commands to the motors
@@ -72,7 +72,7 @@ protected:
 
     // call vehicle supplied thrust compensation if set
     void                thrust_compensation(void) override;
-    
+
     float               _roll_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to roll
     float               _pitch_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to pitch
     float               _yaw_factor[AP_MOTORS_MAX_NUM_MOTORS];  // each motors contribution to yaw (normally 1 or -1)

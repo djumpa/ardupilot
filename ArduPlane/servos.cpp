@@ -227,10 +227,6 @@ void Plane::dspoiler_update(void)
  */
 void Plane::set_servos_idle(void)
 {
-    if (auto_state.idle_wiggle_stage == 0) {
-        SRV_Channels::output_trim_all();
-        return;
-    }
     int16_t servo_value = 0;
     // move over full range for 2 seconds
     auto_state.idle_wiggle_stage += 2;
@@ -574,7 +570,6 @@ void Plane::set_servos(void)
         // steering output
         steering_control.rudder = steering_control.steering;
     }
-    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, steering_control.rudder);
 
     // clear ground_steering to ensure manual control if the yaw stabilizer doesn't run
     steering_control.ground_steering = false;

@@ -58,7 +58,7 @@ bool GCS::install_alternative_protocol(mavlink_channel_t c, GCS_MAVLINK::protoco
     if (c >= num_gcs()) {
         return false;
     }
-    if (chan(c).alternative.handler) {
+    if (chan(c).alternative.handler && handler) {
         // already have one installed - we may need to add support for
         // multiple alternative handlers
         return false;
@@ -66,6 +66,5 @@ bool GCS::install_alternative_protocol(mavlink_channel_t c, GCS_MAVLINK::protoco
     chan(c).alternative.handler = handler;
     return true;
 }
-
 
 #undef FOR_EACH_ACTIVE_CHANNEL

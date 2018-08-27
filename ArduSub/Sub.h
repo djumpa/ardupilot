@@ -456,7 +456,7 @@ private:
     static const AP_Param::Info var_info[];
     static const struct LogStructure log_structure[];
 
-    void compass_accumulate(void);
+    void init_compass_location();
     void compass_cal_update(void);
     void fast_loop();
     void fifty_hz_loop();
@@ -490,7 +490,7 @@ private:
 #endif
     void send_pid_tuning(mavlink_channel_t chan);
     void gcs_data_stream_send(void);
-    void gcs_check_input(void);
+    void gcs_update(void);
     void do_erase_logs(void);
     void Log_Write_Optflow();
     void Log_Write_Control_Tuning();

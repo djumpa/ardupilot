@@ -65,7 +65,7 @@ class AutoTestQuadPlane(AutoTest):
                                     gdb=self.gdb,
                                     gdbserver=self.gdbserver,
                                     breakpoints=self.breakpoints,
-        )
+                                    )
         self.mavproxy = util.start_MAVProxy_SITL(
             'QuadPlane', options=self.mavproxy_options())
         self.mavproxy.expect('Telemetry log: (\S+)\r\n')
@@ -82,17 +82,8 @@ class AutoTestQuadPlane(AutoTest):
 
         self.progress("Started simulator")
 
-        # get a mavlink connection going
-        connection_string = '127.0.0.1:19550'
-        try:
-            self.mav = mavutil.mavlink_connection(connection_string,
-                                                  robust_parsing=True)
-        except Exception as msg:
-            self.progress("Failed to start mavlink connection on %s: %s" %
-                          (connection_string, msg))
-            raise
-        self.mav.message_hooks.append(self.message_hook)
-        self.mav.idle_hooks.append(self.idle_hook)
+        self.get_mavlink_connection_going()
+
         self.hasInit = True
         self.progress("Ready to start testing!")
 
@@ -140,6 +131,7 @@ class AutoTestQuadPlane(AutoTest):
 
     def autotest(self):
         """Autotest QuadPlane in SITL."""
+        self.check_test_syntax(test_file=os.path.realpath(__file__))
         if not self.hasInit:
             self.init()
 
@@ -161,6 +153,7 @@ class AutoTestQuadPlane(AutoTest):
             self.progress("Waiting reading for arm")
             self.wait_seconds(30)
 
+            self.run_test("Arm features", self.test_arm_feature)
             self.arm_vehicle()
 
             m = os.path.join(testdir, "ArduPlane-Missions/Dalby-OBC2016.txt")
@@ -168,7 +161,7 @@ class AutoTestQuadPlane(AutoTest):
                              "ArduPlane-Missions/Dalby-OBC2016-fence.txt")
 
             self.run_test("Mission", lambda: self.fly_mission(m, f))
-        except pexpect.TIMEOUT as e:
+        except pexpect.TIMEOUT:
             self.progress("Failed with timeout")
             self.fail_list.append("Failed with timeout")
 

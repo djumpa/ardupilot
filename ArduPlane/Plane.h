@@ -942,7 +942,6 @@ private:
     void update_compass(void);
     void update_alt(void);
     void afs_fs_check(void);
-    void compass_accumulate(void);
     void compass_cal_update();
     void update_optical_flow(void);
     void one_second_loop(void);
@@ -966,7 +965,6 @@ private:
     void servos_twin_engine_mix();
     void throttle_watt_limiter(int8_t &min_throttle, int8_t &max_throttle);
     bool allow_reverse_thrust(void);
-    void update_aux();
     void update_is_flying_5Hz(void);
     void crash_detection_update(void);
     bool in_preLaunch_flight_stage(void);
@@ -1027,6 +1025,9 @@ private:
     void do_parachute(const AP_Mission::Mission_Command& cmd);
     void parachute_release();
     bool parachute_manual_release();
+#endif
+#if OSD_ENABLED == ENABLED
+    void publish_osd_info();
 #endif
     void accel_cal_update(void);
     void update_soft_armed();

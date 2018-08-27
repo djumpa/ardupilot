@@ -116,11 +116,18 @@ void AP_MotorsBi::output_to_motors()
 //  this can be used to ensure other pwm outputs (i.e. for servos) do not conflict
 uint16_t AP_MotorsBi::get_motor_mask()
 {
-	// tri copter uses channels 1,2,4 and 7
-	return rc_map_mask((1U << AP_MOTORS_MOT_1) |
-		(1U << AP_MOTORS_MOT_2) |
-		(1U << AP_MOTORS_CH_SERVO_BI_LEFT) |
-		(1U << AP_MOTORS_CH_SERVO_BI_RIGHT));
+	// bi copter uses channels 1,2,3 and 4
+	uint16_t motor_mask = (1U << AP_MOTORS_MOT_1) |
+		                  (1U << AP_MOTORS_MOT_2) |
+		                  (1U << AP_MOTORS_CH_SERVO_BI_LEFT) |
+		                  (1U << AP_MOTORS_CH_SERVO_BI_RIGHT);
+
+    uint16_t mask = rc_map_mask(motor_mask);
+
+    // add parent's mask
+    mask |= AP_MotorsMulticopter::get_motor_mask();
+
+    return mask;
 }
 
 // output_armed - sends commands to the motors
@@ -208,69 +215,6 @@ void AP_MotorsBi::output_armed_stabilizing()
 	_angle_left = (-pitch_thrust - yaw_thrust)*(_yaw_servo->get_output_max()-_yaw_servo->get_trim())*_left_reverse/_scale_servo + _yaw_servo->get_trim();
 	_angle_right =(-pitch_thrust + yaw_thrust)*(_right_servo->get_output_max()-_right_servo->get_trim())*_right_reverse/_scale_servo +_right_servo->get_trim();
 
-
-	//_thrust_rear = pitch_thrust * -0.5f;
-
-	// calculate roll and pitch for each motor
-	// set rpy_low and rpy_high to the lowest and highest values of the motors
-
-	// record lowest roll pitch command
-	//rpy_low = MIN(_thrust_right, _thrust_left);
-	//rpy_high = MAX(_thrust_right, _thrust_left);
-	//if (rpy_low > _thrust_rear) {
-	//	rpy_low = _thrust_rear;
-	//}
-	// check to see if the rear motor will reach maximum thrust before the front two motors
-	//if ((1.0f - rpy_high) > (pivot_thrust_max - _thrust_rear)) {
-	//	thrust_max = pivot_thrust_max;
-	//	rpy_high = _thrust_rear;
-	//}
-
-	// calculate throttle that gives most possible room for yaw (range 1000 ~ 2000) which is the lower of:
-	//      1. 0.5f - (rpy_low+rpy_high)/2.0 - this would give the maximum possible room margin above the highest motor and below the lowest
-	//      2. the higher of:
-	//            a) the pilot's throttle input
-	//            b) the point _throttle_rpy_mix between the pilot's input throttle and hover-throttle
-	//      Situation #2 ensure we never increase the throttle above hover throttle unless the pilot has commanded this.
-	//      Situation #2b allows us to raise the throttle above what the pilot commanded but not so far that it would actually cause the copter to rise.
-	//      We will choose #1 (the best throttle for yaw control) if that means reducing throttle to the motors (i.e. we favor reducing throttle *because* it provides better yaw control)
-	//      We will choose #2 (a mix of pilot and hover throttle) only when the throttle is quite low.  We favor reducing throttle instead of better yaw control because the pilot has commanded it
-
-	// check everything fits
-	//throttle_thrust_best_rpy = MIN(0.5f*thrust_max - (rpy_low + rpy_high) / 2.0, _throttle_avg_max);
-	///if (is_zero(rpy_low)) {
-	//	rpy_scale = 1.0f;
-	///}
-	//else {
-	//	rpy_scale = constrain_float(-throttle_thrust_best_rpy / rpy_low, 0.0f, 1.0f);
-	//}
-/*
-	// calculate how close the motors can come to the desired throttle
-	thr_adj = throttle_thrust - throttle_thrust_best_rpy;
-	if (rpy_scale < 1.0f) {
-		// Full range is being used by roll, pitch, and yaw.
-		limit.roll_pitch = true;
-		if (thr_adj > 0.0f) {
-			limit.throttle_upper = true;
-		}
-		thr_adj = 0.0f;
-	}
-	else {
-		if (thr_adj < -(throttle_thrust_best_rpy + rpy_low)) {
-			// Throttle can't be reduced to desired value
-			thr_adj = -(throttle_thrust_best_rpy + rpy_low);
-		}
-		else if (thr_adj > thrust_max - (throttle_thrust_best_rpy + rpy_high)) {
-			// Throttle can't be increased to desired value
-			thr_adj = thrust_max - (throttle_thrust_best_rpy + rpy_high);
-			limit.throttle_upper = true;
-		}
-	}
-
-	// add scaled roll, pitch, constrained yaw and throttle for each motor
-	_thrust_right = throttle_thrust_best_rpy + thr_adj + rpy_scale*_thrust_right;
-	_thrust_left = throttle_thrust_best_rpy + thr_adj + rpy_scale*_thrust_left;
-*/
 
 	// constrain all outputs to 0.0f to 1.0f
 	// test code should be run with these lines commented out as they should not do anything
